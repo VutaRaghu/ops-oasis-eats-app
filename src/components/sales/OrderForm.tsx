@@ -186,25 +186,27 @@ export function OrderForm() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="mb-4"
             />
-            <TabsList className="w-full h-auto flex flex-wrap">
-              <TabsTrigger 
-                value="" 
-                onClick={() => setActiveCategory('')}
-                className={!activeCategory ? "bg-primary text-primary-foreground" : ""}
-              >
-                All
-              </TabsTrigger>
-              {categories.map(category => (
+            <Tabs defaultValue={activeCategory || "all"}>
+              <TabsList className="w-full h-auto flex flex-wrap">
                 <TabsTrigger 
-                  key={category} 
-                  value={category}
-                  onClick={() => setActiveCategory(category)}
-                  className={activeCategory === category ? "bg-primary text-primary-foreground" : ""}
+                  value="all" 
+                  onClick={() => setActiveCategory('')}
+                  className={!activeCategory ? "bg-primary text-primary-foreground" : ""}
                 >
-                  {category}
+                  All
                 </TabsTrigger>
-              ))}
-            </TabsList>
+                {categories.map(category => (
+                  <TabsTrigger 
+                    key={category} 
+                    value={category}
+                    onClick={() => setActiveCategory(category)}
+                    className={activeCategory === category ? "bg-primary text-primary-foreground" : ""}
+                  >
+                    {category}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
           </div>
         </CardHeader>
         <CardContent>
