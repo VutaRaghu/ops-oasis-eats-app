@@ -10,6 +10,8 @@ import SalesPage from "./pages/SalesPage";
 import ExpensesPage from "./pages/ExpensesPage";
 import CatalogPage from "./pages/CatalogPage";
 import StaffPage from "./pages/StaffPage";
+import ReportsPage from "./pages/ReportsPage";
+import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +28,8 @@ const App = () => (
           <Route path="/expenses" element={<ExpensesPage />} />
           <Route path="/catalog" element={<CatalogPage />} />
           <Route path="/staff" element={<StaffPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </TooltipProvider>
