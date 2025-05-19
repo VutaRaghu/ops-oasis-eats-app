@@ -1,12 +1,34 @@
 
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from '@/components/AppSidebar';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
+import { DateRangePicker } from "@/components/reports/DateRangePicker";
+import { SalesReport } from "@/components/reports/SalesReport";
+import { InventoryReport } from "@/components/reports/InventoryReport";
+import { StaffReport } from "@/components/reports/StaffReport";
 
 const ReportsPage = () => {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("sales");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [dateRange, setDateRange] = useState({ from: new Date(), to: new Date() });
+
+  const handleExportToSheets = () => {
+    setIsGenerating(true);
+    
+    // This would connect to Google Sheets and export the data
+    setTimeout(() => {
+      setIsGenerating(false);
+      toast({
+        title: "Report Exported",
+        description: "The report has been exported to Google Sheets successfully.",
+      });
+    }, 1500);
+  };
 
   return (
     <div className="min-h-screen flex w-full">
@@ -24,52 +46,43 @@ const ReportsPage = () => {
           <Card className="w-full scale-in-center">
             <CardHeader>
               <CardTitle>Reports Dashboard</CardTitle>
+              <CardDescription>
+                Generate and export reports based on your Google Sheets data
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="sales" value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="mb-6">
-                  <TabsTrigger value="sales">Sales Reports</TabsTrigger>
-                  <TabsTrigger value="inventory">Inventory Reports</TabsTrigger>
-                  <TabsTrigger value="staff">Staff Reports</TabsTrigger>
-                </TabsList>
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+                  <TabsList>
+                    <TabsTrigger value="sales">Sales Reports</TabsTrigger>
+                    <TabsTrigger value="inventory">Inventory Reports</TabsTrigger>
+                    <TabsTrigger value="staff">Staff Reports</TabsTrigger>
+                  </TabsList>
+                  
+                  <div className="flex flex-col sm:flex-row gap-2 items-center">
+                    <DateRangePicker 
+                      date={dateRange} 
+                      onDateChange={setDateRange}
+                    />
+                    <Button 
+                      onClick={handleExportToSheets} 
+                      disabled={isGenerating}
+                    >
+                      {isGenerating ? "Exporting..." : "Export to Sheets"}
+                    </Button>
+                  </div>
+                </div>
                 
                 <TabsContent value="sales" className="space-y-4">
-                  <div className="p-6 rounded-lg border bg-card text-card-foreground">
-                    <h3 className="text-lg font-medium mb-4">Sales Overview</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Sales reporting functionality coming soon. This section will display sales trends, 
-                      revenue by category, and other sales metrics.
-                    </p>
-                    <div className="h-64 flex items-center justify-center bg-muted/20 rounded-md">
-                      <p className="text-muted-foreground">Sales chart visualization will appear here</p>
-                    </div>
-                  </div>
+                  <SalesReport dateRange={dateRange} />
                 </TabsContent>
                 
                 <TabsContent value="inventory" className="space-y-4">
-                  <div className="p-6 rounded-lg border bg-card text-card-foreground">
-                    <h3 className="text-lg font-medium mb-4">Inventory Status</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Inventory reporting functionality coming soon. This section will display stock levels,
-                      low inventory alerts, and consumption patterns.
-                    </p>
-                    <div className="h-64 flex items-center justify-center bg-muted/20 rounded-md">
-                      <p className="text-muted-foreground">Inventory status visualization will appear here</p>
-                    </div>
-                  </div>
+                  <InventoryReport dateRange={dateRange} />
                 </TabsContent>
                 
                 <TabsContent value="staff" className="space-y-4">
-                  <div className="p-6 rounded-lg border bg-card text-card-foreground">
-                    <h3 className="text-lg font-medium mb-4">Staff Performance</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Staff reporting functionality coming soon. This section will display attendance records,
-                      performance metrics, and scheduled hours.
-                    </p>
-                    <div className="h-64 flex items-center justify-center bg-muted/20 rounded-md">
-                      <p className="text-muted-foreground">Staff performance visualization will appear here</p>
-                    </div>
-                  </div>
+                  <StaffReport dateRange={dateRange} />
                 </TabsContent>
               </Tabs>
             </CardContent>

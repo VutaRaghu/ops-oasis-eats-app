@@ -1,60 +1,68 @@
 
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from '@/components/AppSidebar';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useState, useEffect } from "react";
+import { Textarea } from "@/components/ui/textarea";
+import { SHEETS_CONFIG } from "@/services/googleSheetsConfig";
 import { useToast } from "@/components/ui/use-toast";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { useState } from "react";
-
-const settingsSchema = z.object({
-  restaurantName: z.string().min(1, "Restaurant name is required"),
-  currency: z.string().min(1, "Currency is required"),
-  taxPercentage: z.string(),
-  enableOnlineOrders: z.boolean().default(false),
-  enableDiscounts: z.boolean().default(false),
-  theme: z.enum(["light", "dark", "system"])
-});
-
-type SettingsFormValues = z.infer<typeof settingsSchema>;
 
 const SettingsPage = () => {
   const { toast } = useToast();
-  const [isSaving, setIsSaving] = useState(false);
+  const [apiKey, setApiKey] = useState("");
+  const [spreadsheetId, setSpreadsheetId] = useState(SHEETS_CONFIG.SPREADSHEET_ID || "");
+  const [clientId, setClientId] = useState(SHEETS_CONFIG.CLIENT_ID || "");
+  const [clientSecret, setClientSecret] = useState(SHEETS_CONFIG.CLIENT_SECRET || "");
+  const [salesSheetName, setSalesSheetName] = useState(SHEETS_CONFIG.SHEETS.SALES);
+  const [menuItemsSheetName, setMenuItemsSheetName] = useState(SHEETS_CONFIG.SHEETS.MENU_ITEMS);
+  const [expensesSheetName, setExpensesSheetName] = useState(SHEETS_CONFIG.SHEETS.EXPENSES);
+  const [staffSheetName, setStaffSheetName] = useState(SHEETS_CONFIG.SHEETS.STAFF);
+  const [attendanceSheetName, setAttendanceSheetName] = useState(SHEETS_CONFIG.SHEETS.ATTENDANCE);
   
-  const defaultValues: SettingsFormValues = {
-    restaurantName: "Restaurant Ops",
-    currency: "INR",
-    taxPercentage: "18",
-    enableOnlineOrders: false,
-    enableDiscounts: true,
-    theme: "system"
-  };
-  
-  const form = useForm<SettingsFormValues>({
-    resolver: zodResolver(settingsSchema),
-    defaultValues
-  });
-  
-  const onSubmit = (data: SettingsFormValues) => {
-    setIsSaving(true);
+  const handleSave = () => {
+    // In a real app, we would save these settings to localStorage or a secure storage
+    localStorage.setItem("restaurant_app_spreadsheet_id", spreadsheetId);
+    localStorage.setItem("restaurant_app_api_key", apiKey);
+    localStorage.setItem("restaurant_app_client_id", clientId);
+    localStorage.setItem("restaurant_app_client_secret", clientSecret);
+    localStorage.setItem("restaurant_app_sales_sheet", salesSheetName);
+    localStorage.setItem("restaurant_app_menu_sheet", menuItemsSheetName);
+    localStorage.setItem("restaurant_app_expenses_sheet", expensesSheetName);
+    localStorage.setItem("restaurant_app_staff_sheet", staffSheetName);
+    localStorage.setItem("restaurant_app_attendance_sheet", attendanceSheetName);
     
-    // Simulate API call
-    setTimeout(() => {
-      console.log("Settings saved:", data);
-      setIsSaving(false);
-      toast({
-        title: "Settings saved",
-        description: "Your settings have been saved successfully."
-      });
-    }, 1000);
+    toast({
+      title: "Settings saved",
+      description: "Google Sheets configuration has been saved. Please refresh the page for changes to take effect.",
+    });
   };
+  
+  useEffect(() => {
+    // Load saved settings
+    const savedSpreadsheetId = localStorage.getItem("restaurant_app_spreadsheet_id");
+    const savedApiKey = localStorage.getItem("restaurant_app_api_key");
+    const savedClientId = localStorage.getItem("restaurant_app_client_id");
+    const savedClientSecret = localStorage.getItem("restaurant_app_client_secret");
+    const savedSalesSheet = localStorage.getItem("restaurant_app_sales_sheet");
+    const savedMenuSheet = localStorage.getItem("restaurant_app_menu_sheet");
+    const savedExpensesSheet = localStorage.getItem("restaurant_app_expenses_sheet");
+    const savedStaffSheet = localStorage.getItem("restaurant_app_staff_sheet");
+    const savedAttendanceSheet = localStorage.getItem("restaurant_app_attendance_sheet");
+    
+    if (savedSpreadsheetId) setSpreadsheetId(savedSpreadsheetId);
+    if (savedApiKey) setApiKey(savedApiKey);
+    if (savedClientId) setClientId(savedClientId);
+    if (savedClientSecret) setClientSecret(savedClientSecret);
+    if (savedSalesSheet) setSalesSheetName(savedSalesSheet);
+    if (savedMenuSheet) setMenuItemsSheetName(savedMenuSheet);
+    if (savedExpensesSheet) setExpensesSheetName(savedExpensesSheet);
+    if (savedStaffSheet) setStaffSheetName(savedStaffSheet);
+    if (savedAttendanceSheet) setAttendanceSheetName(savedAttendanceSheet);
+  }, []);
 
   return (
     <div className="min-h-screen flex w-full">
@@ -66,166 +74,163 @@ const SettingsPage = () => {
               <SidebarTrigger />
               <h1 className="text-3xl font-bold ml-2">Settings</h1>
             </div>
-            <p className="text-muted-foreground mt-1">Configure application settings</p>
+            <p className="text-muted-foreground mt-1">Configure your application settings</p>
           </header>
+          
+          <Card className="w-full mb-6 scale-in-center">
+            <CardHeader>
+              <CardTitle>Google Sheets Integration</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="connection" className="w-full">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="connection">Connection</TabsTrigger>
+                  <TabsTrigger value="sheets">Sheet Names</TabsTrigger>
+                  <TabsTrigger value="help">Help</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="connection" className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="spreadsheetId">Google Spreadsheet ID</Label>
+                    <Input
+                      id="spreadsheetId"
+                      value={spreadsheetId}
+                      onChange={(e) => setSpreadsheetId(e.target.value)}
+                      placeholder="Enter spreadsheet ID from the URL"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Find this in your Google Sheets URL: https://docs.google.com/spreadsheets/d/[SPREADSHEET_ID]/edit
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="apiKey">API Key (for read-only access)</Label>
+                    <Input
+                      id="apiKey"
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      placeholder="Enter your Google API Key"
+                      type="password"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="clientId">OAuth Client ID (for write access)</Label>
+                    <Input
+                      id="clientId"
+                      value={clientId}
+                      onChange={(e) => setClientId(e.target.value)}
+                      placeholder="Enter your OAuth Client ID"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="clientSecret">OAuth Client Secret</Label>
+                    <Input
+                      id="clientSecret"
+                      value={clientSecret}
+                      onChange={(e) => setClientSecret(e.target.value)}
+                      placeholder="Enter your OAuth Client Secret"
+                      type="password"
+                    />
+                  </div>
+                  
+                  <Button onClick={handleSave} className="mt-4">Save Configuration</Button>
+                </TabsContent>
+                
+                <TabsContent value="sheets" className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="salesSheet">Sales Sheet Name</Label>
+                    <Input
+                      id="salesSheet"
+                      value={salesSheetName}
+                      onChange={(e) => setSalesSheetName(e.target.value)}
+                      placeholder="Sheet name for sales data"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="menuSheet">Menu Items Sheet Name</Label>
+                    <Input
+                      id="menuSheet"
+                      value={menuItemsSheetName}
+                      onChange={(e) => setMenuItemsSheetName(e.target.value)}
+                      placeholder="Sheet name for menu items"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="expensesSheet">Expenses Sheet Name</Label>
+                    <Input
+                      id="expensesSheet"
+                      value={expensesSheetName}
+                      onChange={(e) => setExpensesSheetName(e.target.value)}
+                      placeholder="Sheet name for expenses"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="staffSheet">Staff Sheet Name</Label>
+                    <Input
+                      id="staffSheet"
+                      value={staffSheetName}
+                      onChange={(e) => setStaffSheetName(e.target.value)}
+                      placeholder="Sheet name for staff data"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="attendanceSheet">Attendance Sheet Name</Label>
+                    <Input
+                      id="attendanceSheet"
+                      value={attendanceSheetName}
+                      onChange={(e) => setAttendanceSheetName(e.target.value)}
+                      placeholder="Sheet name for attendance records"
+                    />
+                  </div>
+                  
+                  <Button onClick={handleSave} className="mt-4">Save Sheet Names</Button>
+                </TabsContent>
+                
+                <TabsContent value="help" className="space-y-4">
+                  <div className="prose max-w-none">
+                    <h3 className="text-lg font-semibold mb-2">Setting up Google Sheets Integration</h3>
+                    <ol className="list-decimal pl-5 space-y-2">
+                      <li>Create a new Google Spreadsheet or use an existing one</li>
+                      <li>Create the following sheets with appropriate headers:
+                        <ul className="list-disc pl-5 space-y-1">
+                          <li><strong>Sales</strong>: OrderID, OrderTime, CatalogueNumber, ItemName, Quantity, Price, Total, PaymentMethod, Remark, CustomerName</li>
+                          <li><strong>Menu Items</strong>: CatalogueNumber, ItemName, Price, Category</li>
+                          <li><strong>Expenses</strong>: ID, Category, SubCategory, Amount, Description, Date, PaidBy</li>
+                          <li><strong>Staff</strong>: ID, Name, Role, Salary, ContactNumber</li>
+                          <li><strong>Attendance</strong>: ID, StaffID, StaffName, ClockIn, ClockOut, Date, Status</li>
+                        </ul>
+                      </li>
+                      <li>Get your Spreadsheet ID from the URL of your Google Sheet</li>
+                      <li>Create a project in Google Cloud Console and enable the Google Sheets API</li>
+                      <li>Create API credentials (API key for read-only, OAuth credentials for read/write)</li>
+                      <li>Enter these credentials in the Connection tab</li>
+                      <li>Make sure your spreadsheet is shared with the service account email</li>
+                    </ol>
+                    
+                    <p className="mt-4">
+                      For detailed instructions on creating Google API credentials, please refer to the 
+                      <a href="https://developers.google.com/sheets/api/quickstart/js" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer"> Google Sheets API documentation</a>.
+                    </p>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
           
           <Card className="w-full scale-in-center">
             <CardHeader>
-              <CardTitle>Restaurant Settings</CardTitle>
-              <CardDescription>
-                Configure your restaurant's basic information and preferences.
-              </CardDescription>
+              <CardTitle>Other Settings</CardTitle>
             </CardHeader>
             <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="restaurantName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Restaurant Name</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          This is the name of your restaurant as it will appear on receipts and reports.
-                        </FormDescription>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="currency"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Currency</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select currency" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="INR">Indian Rupee (₹)</SelectItem>
-                              <SelectItem value="USD">US Dollar ($)</SelectItem>
-                              <SelectItem value="EUR">Euro (€)</SelectItem>
-                              <SelectItem value="GBP">British Pound (£)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="taxPercentage"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tax Percentage</FormLabel>
-                          <FormControl>
-                            <div className="flex items-center">
-                              <Input
-                                type="number"
-                                {...field}
-                                min="0"
-                                max="100"
-                                className="flex-1"
-                              />
-                              <span className="ml-2">%</span>
-                            </div>
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Features</h3>
-                    
-                    <FormField
-                      control={form.control}
-                      name="enableOnlineOrders"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                          <div className="space-y-0.5">
-                            <FormLabel>Enable Online Orders</FormLabel>
-                            <FormDescription>
-                              Allow customers to place orders online
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="enableDiscounts"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                          <div className="space-y-0.5">
-                            <FormLabel>Enable Discounts</FormLabel>
-                            <FormDescription>
-                              Apply discounts to orders
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="theme"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Theme Preference</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select theme" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="light">Light</SelectItem>
-                              <SelectItem value="dark">Dark</SelectItem>
-                              <SelectItem value="system">System</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            Select your preferred application theme
-                          </FormDescription>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  <div className="flex justify-end">
-                    <Button type="submit" disabled={isSaving}>
-                      {isSaving ? "Saving..." : "Save Settings"}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
+              <p className="text-muted-foreground mb-4">
+                Additional application settings will appear here.
+              </p>
             </CardContent>
           </Card>
         </div>
