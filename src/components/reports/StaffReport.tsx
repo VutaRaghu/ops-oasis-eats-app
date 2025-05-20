@@ -51,7 +51,7 @@ const StaffReport: React.FC<StaffReportProps> = ({
     const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     const daysPresent = staffAttendance.filter((record) => record.status === "Present").length;
     const daysAbsent = staffAttendance.filter((record) => record.status === "Absent").length;
-    const daysLate = staffAttendance.filter((record) => record.status === "Late").length;
+    const daysHalfDay = staffAttendance.filter((record) => record.status === "Half-day").length;
     
     const attendanceRate = (daysPresent / totalDays) * 100;
     
@@ -62,7 +62,7 @@ const StaffReport: React.FC<StaffReportProps> = ({
       totalDays,
       daysPresent,
       daysAbsent,
-      daysLate,
+      daysHalfDay,
       attendanceRate,
     };
   });
@@ -135,13 +135,12 @@ const StaffReport: React.FC<StaffReportProps> = ({
                   </div>
                   <Progress
                     value={stat.attendanceRate}
-                    className="h-2"
-                    indicatorClassName={
+                    className={
                       stat.attendanceRate > 90
-                        ? "bg-green-500"
+                        ? "h-2 bg-gray-200"
                         : stat.attendanceRate > 75
-                        ? "bg-yellow-500"
-                        : "bg-red-500"
+                        ? "h-2 bg-gray-200"
+                        : "h-2 bg-gray-200"
                     }
                   />
                 </div>
@@ -160,7 +159,7 @@ const StaffReport: React.FC<StaffReportProps> = ({
                   <TableHead>Role</TableHead>
                   <TableHead className="text-right">Days Present</TableHead>
                   <TableHead className="text-right">Days Absent</TableHead>
-                  <TableHead className="text-right">Days Late</TableHead>
+                  <TableHead className="text-right">Half Days</TableHead>
                   <TableHead className="text-right">Attendance Rate</TableHead>
                 </TableRow>
               </TableHeader>
@@ -171,7 +170,7 @@ const StaffReport: React.FC<StaffReportProps> = ({
                     <TableCell>{stat.role}</TableCell>
                     <TableCell className="text-right">{stat.daysPresent}</TableCell>
                     <TableCell className="text-right">{stat.daysAbsent}</TableCell>
-                    <TableCell className="text-right">{stat.daysLate}</TableCell>
+                    <TableCell className="text-right">{stat.daysHalfDay}</TableCell>
                     <TableCell className="text-right">
                       {stat.attendanceRate.toFixed(1)}%
                     </TableCell>
