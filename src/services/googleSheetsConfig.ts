@@ -5,8 +5,10 @@ export const SHEETS_CONFIG = {
   SPREADSHEET_ID: "", // Add your spreadsheet ID here
   SCOPES: ["https://www.googleapis.com/auth/spreadsheets"],
   API_KEY: "", // For public data only
-  CLIENT_ID: "", // For OAuth authentication
-  CLIENT_SECRET: "", // For OAuth authentication
+  
+  // Service account credentials
+  SERVICE_ACCOUNT_EMAIL: "",
+  SERVICE_ACCOUNT_PRIVATE_KEY: "",
   
   // Sheet names - adjust according to your spreadsheet structure
   SHEETS: {
@@ -41,8 +43,8 @@ export const SAMPLE_CREDENTIALS = {
 export const loadGoogleSheetsConfig = () => {
   const spreadsheetId = localStorage.getItem("restaurant_app_spreadsheet_id") || "";
   const apiKey = localStorage.getItem("restaurant_app_api_key") || "";
-  const clientId = localStorage.getItem("restaurant_app_client_id") || "";
-  const clientSecret = localStorage.getItem("restaurant_app_client_secret") || "";
+  const serviceAccountEmail = localStorage.getItem("restaurant_app_service_account_email") || "";
+  const serviceAccountPrivateKey = localStorage.getItem("restaurant_app_service_account_private_key") || "";
   
   // Sheet names
   const salesSheet = localStorage.getItem("restaurant_app_sales_sheet") || SHEETS_CONFIG.SHEETS.SALES;
@@ -54,8 +56,8 @@ export const loadGoogleSheetsConfig = () => {
   return {
     SPREADSHEET_ID: spreadsheetId,
     API_KEY: apiKey,
-    CLIENT_ID: clientId,
-    CLIENT_SECRET: clientSecret,
+    SERVICE_ACCOUNT_EMAIL: serviceAccountEmail,
+    SERVICE_ACCOUNT_PRIVATE_KEY: serviceAccountPrivateKey,
     SHEETS: {
       SALES: salesSheet,
       MENU_ITEMS: menuItemsSheet,

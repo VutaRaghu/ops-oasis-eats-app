@@ -15,8 +15,8 @@ const SettingsPage = () => {
   const { toast } = useToast();
   const [apiKey, setApiKey] = useState("");
   const [spreadsheetId, setSpreadsheetId] = useState(SHEETS_CONFIG.SPREADSHEET_ID || "");
-  const [clientId, setClientId] = useState(SHEETS_CONFIG.CLIENT_ID || "");
-  const [clientSecret, setClientSecret] = useState(SHEETS_CONFIG.CLIENT_SECRET || "");
+  const [serviceAccountEmail, setServiceAccountEmail] = useState("");
+  const [serviceAccountPrivateKey, setServiceAccountPrivateKey] = useState("");
   const [salesSheetName, setSalesSheetName] = useState(SHEETS_CONFIG.SHEETS.SALES);
   const [menuItemsSheetName, setMenuItemsSheetName] = useState(SHEETS_CONFIG.SHEETS.MENU_ITEMS);
   const [expensesSheetName, setExpensesSheetName] = useState(SHEETS_CONFIG.SHEETS.EXPENSES);
@@ -27,8 +27,8 @@ const SettingsPage = () => {
     // In a real app, we would save these settings to localStorage or a secure storage
     localStorage.setItem("restaurant_app_spreadsheet_id", spreadsheetId);
     localStorage.setItem("restaurant_app_api_key", apiKey);
-    localStorage.setItem("restaurant_app_client_id", clientId);
-    localStorage.setItem("restaurant_app_client_secret", clientSecret);
+    localStorage.setItem("restaurant_app_service_account_email", serviceAccountEmail);
+    localStorage.setItem("restaurant_app_service_account_private_key", serviceAccountPrivateKey);
     localStorage.setItem("restaurant_app_sales_sheet", salesSheetName);
     localStorage.setItem("restaurant_app_menu_sheet", menuItemsSheetName);
     localStorage.setItem("restaurant_app_expenses_sheet", expensesSheetName);
@@ -45,8 +45,8 @@ const SettingsPage = () => {
     // Load saved settings
     const savedSpreadsheetId = localStorage.getItem("restaurant_app_spreadsheet_id");
     const savedApiKey = localStorage.getItem("restaurant_app_api_key");
-    const savedClientId = localStorage.getItem("restaurant_app_client_id");
-    const savedClientSecret = localStorage.getItem("restaurant_app_client_secret");
+    const savedServiceAccountEmail = localStorage.getItem("restaurant_app_service_account_email");
+    const savedServiceAccountPrivateKey = localStorage.getItem("restaurant_app_service_account_private_key");
     const savedSalesSheet = localStorage.getItem("restaurant_app_sales_sheet");
     const savedMenuSheet = localStorage.getItem("restaurant_app_menu_sheet");
     const savedExpensesSheet = localStorage.getItem("restaurant_app_expenses_sheet");
@@ -55,8 +55,8 @@ const SettingsPage = () => {
     
     if (savedSpreadsheetId) setSpreadsheetId(savedSpreadsheetId);
     if (savedApiKey) setApiKey(savedApiKey);
-    if (savedClientId) setClientId(savedClientId);
-    if (savedClientSecret) setClientSecret(savedClientSecret);
+    if (savedServiceAccountEmail) setServiceAccountEmail(savedServiceAccountEmail);
+    if (savedServiceAccountPrivateKey) setServiceAccountPrivateKey(savedServiceAccountPrivateKey);
     if (savedSalesSheet) setSalesSheetName(savedSalesSheet);
     if (savedMenuSheet) setMenuItemsSheetName(savedMenuSheet);
     if (savedExpensesSheet) setExpensesSheetName(savedExpensesSheet);
@@ -85,6 +85,7 @@ const SettingsPage = () => {
               <Tabs defaultValue="connection" className="w-full">
                 <TabsList className="mb-4">
                   <TabsTrigger value="connection">Connection</TabsTrigger>
+                  <TabsTrigger value="serviceAccount">Service Account</TabsTrigger>
                   <TabsTrigger value="sheets">Sheet Names</TabsTrigger>
                   <TabsTrigger value="help">Help</TabsTrigger>
                 </TabsList>
@@ -104,7 +105,7 @@ const SettingsPage = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="apiKey">API Key (for read-only access)</Label>
+                    <Label htmlFor="apiKey">API Key (optional, for read-only access)</Label>
                     <Input
                       id="apiKey"
                       value={apiKey}
@@ -112,30 +113,44 @@ const SettingsPage = () => {
                       placeholder="Enter your Google API Key"
                       type="password"
                     />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="clientId">OAuth Client ID (for write access)</Label>
-                    <Input
-                      id="clientId"
-                      value={clientId}
-                      onChange={(e) => setClientId(e.target.value)}
-                      placeholder="Enter your OAuth Client ID"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="clientSecret">OAuth Client Secret</Label>
-                    <Input
-                      id="clientSecret"
-                      value={clientSecret}
-                      onChange={(e) => setClientSecret(e.target.value)}
-                      placeholder="Enter your OAuth Client Secret"
-                      type="password"
-                    />
+                    <p className="text-sm text-muted-foreground">
+                      API Key is optional if you're using a Service Account for authentication.
+                    </p>
                   </div>
                   
                   <Button onClick={handleSave} className="mt-4">Save Configuration</Button>
+                </TabsContent>
+                
+                <TabsContent value="serviceAccount" className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="serviceAccountEmail">Service Account Email</Label>
+                    <Input
+                      id="serviceAccountEmail"
+                      value={serviceAccountEmail}
+                      onChange={(e) => setServiceAccountEmail(e.target.value)}
+                      placeholder="your-service-account@your-project.iam.gserviceaccount.com"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      The email address of your Google Cloud service account
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="serviceAccountPrivateKey">Service Account Private Key</Label>
+                    <Textarea
+                      id="serviceAccountPrivateKey"
+                      value={serviceAccountPrivateKey}
+                      onChange={(e) => setServiceAccountPrivateKey(e.target.value)}
+                      placeholder="-----BEGIN PRIVATE KEY-----\nYour private key here\n-----END PRIVATE KEY-----"
+                      className="font-mono text-xs"
+                      rows={8}
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      The private key from your service account JSON file, including the BEGIN and END lines
+                    </p>
+                  </div>
+                  
+                  <Button onClick={handleSave} className="mt-4">Save Service Account</Button>
                 </TabsContent>
                 
                 <TabsContent value="sheets" className="space-y-4">
@@ -208,14 +223,14 @@ const SettingsPage = () => {
                       </li>
                       <li>Get your Spreadsheet ID from the URL of your Google Sheet</li>
                       <li>Create a project in Google Cloud Console and enable the Google Sheets API</li>
-                      <li>Create API credentials (API key for read-only, OAuth credentials for read/write)</li>
-                      <li>Enter these credentials in the Connection tab</li>
-                      <li>Make sure your spreadsheet is shared with the service account email</li>
+                      <li>Create a service account and download the JSON key file</li>
+                      <li>Enter the service account email and private key in the Service Account tab</li>
+                      <li>Share your spreadsheet with the service account email (give it Editor access)</li>
                     </ol>
                     
                     <p className="mt-4">
-                      For detailed instructions on creating Google API credentials, please refer to the 
-                      <a href="https://developers.google.com/sheets/api/quickstart/js" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer"> Google Sheets API documentation</a>.
+                      For detailed instructions on creating Google service accounts, please refer to the 
+                      <a href="https://developers.google.com/sheets/api/guides/authorizing" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer"> Google Sheets API authorization documentation</a>.
                     </p>
                   </div>
                 </TabsContent>
