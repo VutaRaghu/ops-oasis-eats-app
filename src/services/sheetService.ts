@@ -1,19 +1,25 @@
-
 import { MenuItem, Order, Expense, Attendance, StaffMember } from '@/types';
 import { menuItems, generateSampleOrders, expenses, generateAttendance, staffMembers } from './mockData';
 import googleSheetsService from './googleSheetsService';
-import { SHEETS_CONFIG } from './googleSheetsConfig';
+import { loadGoogleSheetsConfig } from './googleSheetsConfig';
 
 export class SheetService {
   private useMockData: boolean = true;
+  private config = loadGoogleSheetsConfig();
   
   constructor() {
     // Check if Google Sheets config is ready
-    this.useMockData = !SHEETS_CONFIG.SPREADSHEET_ID;
+    this.useMockData = !this.config.SPREADSHEET_ID || !this.config.API_KEY;
     
     if (!this.useMockData) {
       // Initialize Google Sheets connection
       googleSheetsService.initialize()
+        .then(success => {
+          this.useMockData = !success;
+          if (this.useMockData) {
+            console.warn('Failed to initialize Google Sheets, falling back to mock data');
+          }
+        })
         .catch(error => {
           console.error('Failed to initialize Google Sheets, falling back to mock data:', error);
           this.useMockData = true;
@@ -28,7 +34,7 @@ export class SheetService {
     }
     
     try {
-      const sheetName = SHEETS_CONFIG.SHEETS.MENU_ITEMS;
+      const sheetName = this.config.SHEETS.MENU_ITEMS;
       const range = 'A2:E1000'; // Skip header row, get all columns
       const values = await googleSheetsService.readSheet(sheetName, range);
       
@@ -53,7 +59,7 @@ export class SheetService {
     }
     
     try {
-      const sheetName = SHEETS_CONFIG.SHEETS.MENU_ITEMS;
+      const sheetName = this.config.SHEETS.MENU_ITEMS;
       await googleSheetsService.appendToSheet(sheetName, 'A:D', [
         [item.catalogueNumber, item.itemName, item.price, item.category]
       ]);
@@ -78,7 +84,7 @@ export class SheetService {
         throw new Error(`Item with catalogue number ${item.catalogueNumber} not found`);
       }
       
-      const sheetName = SHEETS_CONFIG.SHEETS.MENU_ITEMS;
+      const sheetName = this.config.SHEETS.MENU_ITEMS;
       // Row index is +2 because of 0-indexing and header row
       const rowIndex = index + 2;
       await googleSheetsService.writeToSheet(sheetName, `A${rowIndex}:D${rowIndex}`, [
@@ -110,7 +116,7 @@ export class SheetService {
     }
     
     try {
-      const sheetName = SHEETS_CONFIG.SHEETS.SALES;
+      const sheetName = this.config.SHEETS.SALES;
       const range = 'A2:J1000'; // Skip header row
       const values = await googleSheetsService.readSheet(sheetName, range);
       
@@ -173,7 +179,7 @@ export class SheetService {
     }
     
     try {
-      const sheetName = SHEETS_CONFIG.SHEETS.SALES;
+      const sheetName = this.config.SHEETS.SALES;
       
       // Convert order to rows for the sheet
       const rows = order.items.map(item => [
@@ -204,7 +210,7 @@ export class SheetService {
     }
     
     try {
-      const sheetName = SHEETS_CONFIG.SHEETS.EXPENSES;
+      const sheetName = this.config.SHEETS.EXPENSES;
       const range = 'A2:G1000'; // Skip header row
       const values = await googleSheetsService.readSheet(sheetName, range);
       
@@ -233,7 +239,7 @@ export class SheetService {
     }
     
     try {
-      const sheetName = SHEETS_CONFIG.SHEETS.EXPENSES;
+      const sheetName = this.config.SHEETS.EXPENSES;
       await googleSheetsService.appendToSheet(sheetName, 'A:G', [
         [
           expense.id,
@@ -259,7 +265,7 @@ export class SheetService {
     }
     
     try {
-      const sheetName = SHEETS_CONFIG.SHEETS.STAFF;
+      const sheetName = this.config.SHEETS.STAFF;
       const range = 'A2:E1000'; // Skip header row
       const values = await googleSheetsService.readSheet(sheetName, range);
       
@@ -285,7 +291,7 @@ export class SheetService {
     }
     
     try {
-      const sheetName = SHEETS_CONFIG.SHEETS.ATTENDANCE;
+      const sheetName = this.config.SHEETS.ATTENDANCE;
       const range = 'A2:G1000'; // Skip header row
       const values = await googleSheetsService.readSheet(sheetName, range);
       
@@ -314,7 +320,7 @@ export class SheetService {
     }
     
     try {
-      const sheetName = SHEETS_CONFIG.SHEETS.ATTENDANCE;
+      const sheetName = this.config.SHEETS.ATTENDANCE;
       await googleSheetsService.appendToSheet(sheetName, 'A:G', [
         [
           attendance.id,

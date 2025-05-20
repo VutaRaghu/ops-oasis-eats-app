@@ -1,192 +1,189 @@
 
-import { DateRange } from "react-day-picker";
-import { Card, CardContent, CardTitle } from "@/components/ui/card";
-import { useQuery } from "@tanstack/react-query";
-import sheetService from "@/services/sheetService";
-import { 
-  Table, 
-  TableBody, 
-  TableCaption, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import React from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
-} from "recharts";
-import { format } from "date-fns";
+import { Progress } from "@/components/ui/progress";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Label, Legend } from "recharts";
+
+// For TypeScript type checking
+import { StaffMember, Attendance } from "@/types";
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 interface StaffReportProps {
-  dateRange: DateRange;
+  staff: StaffMember[];
+  attendance: Attendance[];
+  startDate: Date;
+  endDate: Date;
 }
 
-export function StaffReport({ dateRange }: StaffReportProps) {
-  // Fetch staff and attendance data
-  const { data: staff, isLoading: isLoadingStaff } = useQuery({
-    queryKey: ['staff'],
-    queryFn: () => sheetService.getStaffMembers(),
-  });
-  
-  const { data: attendance, isLoading: isLoadingAttendance } = useQuery({
-    queryKey: ['attendance'],
-    queryFn: () => sheetService.getAttendance(),
-  });
-  
-  if (isLoadingStaff || isLoadingAttendance) {
-    return (
-      <div className="p-6 rounded-lg border bg-card text-card-foreground">
-        <h3 className="text-lg font-medium mb-4">Loading staff data...</h3>
-        <div className="h-64 w-full flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
-  }
-  
+const StaffReport: React.FC<StaffReportProps> = ({
+  staff,
+  attendance,
+  startDate,
+  endDate,
+}) => {
   // Filter attendance records by date range
-  const filteredAttendance = attendance?.filter(record => {
+  const filteredAttendance = attendance.filter((record) => {
     const recordDate = new Date(record.date);
-    if (dateRange.from && dateRange.to) {
-      return recordDate >= dateRange.from && recordDate <= dateRange.to;
-    }
-    return true;
-  }) || [];
-  
-  // Process attendance statistics by staff member
-  const attendanceByStaff = staff?.map(staffMember => {
+    return recordDate >= startDate && recordDate <= endDate;
+  });
+
+  // Calculate attendance metrics
+  const attendanceStats = staff.map((staffMember) => {
     const staffAttendance = filteredAttendance.filter(
-      record => record.staffId === staffMember.id
+      (record) => record.staffId === staffMember.id
     );
     
-    const presentDays = staffAttendance.filter(
-      record => record.status === 'Present'
-    ).length;
+    const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const daysPresent = staffAttendance.filter((record) => record.status === "Present").length;
+    const daysAbsent = staffAttendance.filter((record) => record.status === "Absent").length;
+    const daysLate = staffAttendance.filter((record) => record.status === "Late").length;
     
-    const halfDays = staffAttendance.filter(
-      record => record.status === 'Half-day'
-    ).length;
-    
-    const absentDays = staffAttendance.filter(
-      record => record.status === 'Absent'
-    ).length;
+    const attendanceRate = (daysPresent / totalDays) * 100;
     
     return {
       id: staffMember.id,
       name: staffMember.name,
       role: staffMember.role,
-      presentDays,
-      halfDays,
-      absentDays,
-      totalDays: presentDays + halfDays + absentDays
+      totalDays,
+      daysPresent,
+      daysAbsent,
+      daysLate,
+      attendanceRate,
     };
-  }) || [];
-  
-  // Calculate attendance percentage
-  const attendanceData = attendanceByStaff.map(record => ({
-    name: record.name,
-    present: record.totalDays > 0 ? (record.presentDays / record.totalDays) * 100 : 0,
-    absent: record.totalDays > 0 ? (record.absentDays / record.totalDays) * 100 : 0,
-    halfDay: record.totalDays > 0 ? (record.halfDays / record.totalDays) * 100 : 0,
-    totalDays: record.totalDays
-  }));
+  });
+
+  // Prepare data for pie chart
+  const roleDistribution = staff.reduce((acc, member) => {
+    const role = member.role;
+    const existingRole = acc.find((item) => item.name === role);
+    
+    if (existingRole) {
+      existingRole.value += 1;
+    } else {
+      acc.push({ name: role, value: 1 });
+    }
+    
+    return acc;
+  }, [] as { name: string; value: number }[]);
 
   return (
-    <div className="space-y-4">
-      {/* Attendance Chart */}
-      <Card>
-        <CardContent className="pt-6">
-          <CardTitle className="mb-4">Staff Attendance Statistics</CardTitle>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={attendanceData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft' }} />
-                <Tooltip formatter={(value) => [`${value.toFixed(1)}%`]} />
-                <Legend />
-                <Bar dataKey="present" name="Present" stackId="a" fill="#4ade80" />
-                <Bar dataKey="halfDay" name="Half Day" stackId="a" fill="#facc15" />
-                <Bar dataKey="absent" name="Absent" stackId="a" fill="#f87171" />
-              </BarChart>
-            </ResponsiveContainer>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Staff Performance</CardTitle>
+        <CardDescription>
+          Staff attendance and performance metrics from{" "}
+          {startDate.toLocaleDateString()} to {endDate.toLocaleDateString()}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div>
+            <h3 className="text-lg font-medium mb-4">Role Distribution</h3>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={roleDistribution}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => 
+                      `${name}: ${(percent * 100).toFixed(0)}%`
+                    }
+                  >
+                    {roleDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Legend />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => [`${value} staff`, name]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </CardContent>
-      </Card>
-      
-      {/* Recent Attendance Records */}
-      <Card>
-        <CardContent className="pt-6">
-          <CardTitle className="mb-4">Recent Attendance Records</CardTitle>
-          <div className="rounded-md border overflow-x-auto">
+          
+          <div>
+            <h3 className="text-lg font-medium mb-4">Staff Attendance Rate</h3>
+            <div className="space-y-4">
+              {attendanceStats.slice(0, 5).map((stat) => (
+                <div key={stat.id}>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium">{stat.name}</span>
+                    <span className="text-sm font-medium">
+                      {stat.attendanceRate.toFixed(1)}%
+                    </span>
+                  </div>
+                  <Progress
+                    value={stat.attendanceRate}
+                    className="h-2"
+                    indicatorClassName={
+                      stat.attendanceRate > 90
+                        ? "bg-green-500"
+                        : stat.attendanceRate > 75
+                        ? "bg-yellow-500"
+                        : "bg-red-500"
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-medium mb-4">Staff Attendance Details</h3>
+          <div className="border rounded-lg overflow-hidden">
             <Table>
-              <TableCaption>Showing up to 20 recent attendance records</TableCaption>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Clock In</TableHead>
-                  <TableHead>Clock Out</TableHead>
+                  <TableHead className="text-right">Days Present</TableHead>
+                  <TableHead className="text-right">Days Absent</TableHead>
+                  <TableHead className="text-right">Days Late</TableHead>
+                  <TableHead className="text-right">Attendance Rate</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredAttendance.slice(0, 20).map((record) => {
-                  const staffInfo = staff?.find(s => s.id === record.staffId);
-                  return (
-                    <TableRow key={record.id}>
-                      <TableCell>{format(new Date(record.date), 'MMM dd, yyyy')}</TableCell>
-                      <TableCell className="font-medium">{record.staffName}</TableCell>
-                      <TableCell>{staffInfo?.role || '-'}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={
-                            record.status === 'Present' ? 'default' :
-                            record.status === 'Half-day' ? 'outline' : 'destructive'
-                          }
-                        >
-                          {record.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {record.clockIn 
-                          ? format(new Date(record.clockIn), 'hh:mm a') 
-                          : '-'
-                        }
-                      </TableCell>
-                      <TableCell>
-                        {record.clockOut 
-                          ? format(new Date(record.clockOut), 'hh:mm a') 
-                          : '-'
-                        }
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-                {filteredAttendance.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
-                      No attendance records found for the selected date range
+                {attendanceStats.map((stat) => (
+                  <TableRow key={stat.id}>
+                    <TableCell className="font-medium">{stat.name}</TableCell>
+                    <TableCell>{stat.role}</TableCell>
+                    <TableCell className="text-right">{stat.daysPresent}</TableCell>
+                    <TableCell className="text-right">{stat.daysAbsent}</TableCell>
+                    <TableCell className="text-right">{stat.daysLate}</TableCell>
+                    <TableCell className="text-right">
+                      {stat.attendanceRate.toFixed(1)}%
                     </TableCell>
                   </TableRow>
-                )}
+                ))}
               </TableBody>
             </Table>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </CardContent>
+    </Card>
   );
-}
+};
+
+export default StaffReport;

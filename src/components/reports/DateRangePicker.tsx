@@ -9,8 +9,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface DateRangePickerProps {
-  date: DateRange;
-  onDateChange: (date: DateRange) => void;
+  date: DateRange | { from: Date; to: Date };
+  onDateChange: (date: DateRange | { from: Date; to: Date }) => void;
 }
 
 export function DateRangePicker({ date, onDateChange }: DateRangePickerProps) {
@@ -46,8 +46,8 @@ export function DateRangePicker({ date, onDateChange }: DateRangePickerProps) {
             initialFocus
             mode="range"
             defaultMonth={date?.from}
-            selected={date}
-            onSelect={onDateChange}
+            selected={date as DateRange}
+            onSelect={(newDate) => onDateChange(newDate || { from: new Date(), to: new Date() })}
             numberOfMonths={2}
           />
         </PopoverContent>
