@@ -20,25 +20,37 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
+import { MenuItem, Order } from "@/types";
 
 interface InventoryReportProps {
   dateRange: DateRange;
+  menuItems?: MenuItem[];
+  orders?: Order[];
+  startDate?: Date;
+  endDate?: Date;
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#83a6ed'];
 
-export function InventoryReport({ dateRange }: InventoryReportProps) {
-  // Fetch menu items data
-  const { data: menuItems, isLoading } = useQuery({
+export function InventoryReport({ dateRange, menuItems: propMenuItems, orders: propOrders, startDate, endDate }: InventoryReportProps) {
+  // Fetch menu items data if not provided as props
+  const { data: fetchedMenuItems, isLoading: loadingMenuItems } = useQuery({
     queryKey: ['menuItems'],
     queryFn: () => sheetService.getMenuItems(),
+    enabled: !propMenuItems,
   });
   
-  // Fetch orders data to calculate item popularity
-  const { data: orders } = useQuery({
+  // Fetch orders data to calculate item popularity if not provided as props
+  const { data: fetchedOrders, isLoading: loadingOrders } = useQuery({
     queryKey: ['orders'],
     queryFn: () => sheetService.getOrders(),
+    enabled: !propOrders,
   });
+  
+  // Use either the prop values or fetched data
+  const menuItems = propMenuItems || fetchedMenuItems;
+  const orders = propOrders || fetchedOrders;
+  const isLoading = !menuItems || (loadingMenuItems || loadingOrders);
   
   if (isLoading) {
     return (
@@ -51,11 +63,17 @@ export function InventoryReport({ dateRange }: InventoryReportProps) {
     );
   }
   
+  // Determine date range from props or component props
+  const effectiveDateRange = {
+    from: startDate || dateRange.from,
+    to: endDate || dateRange.to || dateRange.from
+  };
+  
   // Calculate items sold in date range
   const filteredOrders = orders?.filter(order => {
     const orderDate = new Date(order.createdAt);
-    if (dateRange.from && dateRange.to) {
-      return orderDate >= dateRange.from && orderDate <= dateRange.to;
+    if (effectiveDateRange.from && effectiveDateRange.to) {
+      return orderDate >= effectiveDateRange.from && orderDate <= effectiveDateRange.to;
     }
     return true;
   }) || [];

@@ -13,6 +13,7 @@ import StaffReport from "@/components/reports/StaffReport";
 import sheetService from "@/services/sheetService";
 import { useToast } from "@/components/ui/use-toast";
 import { DateRange } from "react-day-picker";
+import { Order, MenuItem, StaffMember, Attendance, Expense } from "@/types";
 
 function ReportsPage() {
   const { toast } = useToast();
@@ -23,11 +24,11 @@ function ReportsPage() {
   });
   
   // Type definitions for state
-  const [orders, setOrders] = useState<any[]>([]);
-  const [menuItems, setMenuItems] = useState<any[]>([]);
-  const [expenses, setExpenses] = useState<any[]>([]);
-  const [staff, setStaff] = useState<any[]>([]);
-  const [attendance, setAttendance] = useState<any[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [attendance, setAttendance] = useState<Attendance[]>([]);
 
   // Get data from services
   useEffect(() => {
@@ -154,8 +155,8 @@ function ReportsPage() {
               <CardContent className="p-6">
                 <TabsContent value="sales" className="mt-0">
                   <SalesReport 
+                    dateRange={dateRange}
                     orders={orders}
-                    menuItems={menuItems}
                     startDate={dateRange.from}
                     endDate={dateRange.to || dateRange.from}
                   />
@@ -163,6 +164,7 @@ function ReportsPage() {
                 
                 <TabsContent value="inventory" className="mt-0">
                   <InventoryReport 
+                    dateRange={dateRange}
                     menuItems={menuItems}
                     orders={orders}
                     startDate={dateRange.from}

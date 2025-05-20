@@ -26,19 +26,28 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
+import { Order, MenuItem } from "@/types";
 
 interface SalesReportProps {
   dateRange: DateRange;
+  orders?: Order[];
+  menuItems?: MenuItem[];
+  startDate?: Date;
+  endDate?: Date;
 }
 
-export function SalesReport({ dateRange }: SalesReportProps) {
+export function SalesReport({ dateRange, orders: propOrders, startDate, endDate }: SalesReportProps) {
   const { toast } = useToast();
   
-  // Fetch orders data
-  const { data: orders, isLoading, error } = useQuery({
+  // Fetch orders data if not provided as props
+  const { data: fetchedOrders, isLoading, error } = useQuery({
     queryKey: ['orders'],
     queryFn: () => sheetService.getOrders(),
+    enabled: !propOrders,
   });
+  
+  // Use either the prop orders or fetched orders
+  const orders = propOrders || fetchedOrders;
   
   if (isLoading) {
     return (
@@ -66,11 +75,17 @@ export function SalesReport({ dateRange }: SalesReportProps) {
     );
   }
   
+  // Determine date range from props or component props
+  const effectiveDateRange = {
+    from: startDate || dateRange.from,
+    to: endDate || dateRange.to || dateRange.from
+  };
+  
   // Filter orders by date range
   const filteredOrders = orders?.filter(order => {
     const orderDate = new Date(order.createdAt);
-    if (dateRange.from && dateRange.to) {
-      return orderDate >= dateRange.from && orderDate <= dateRange.to;
+    if (effectiveDateRange.from && effectiveDateRange.to) {
+      return orderDate >= effectiveDateRange.from && orderDate <= effectiveDateRange.to;
     }
     return true;
   }) || [];
